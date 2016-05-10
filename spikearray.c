@@ -23,12 +23,22 @@ void free_spikearray(SpikeArray *spikearray)
 }
 
 
+void unset_spikearray_state(SpikeArray *spikearray)
+{
+  int i;
+  for(i=0; i<spikearray->n; i++)
+    {
+      spikearray->spikes[i].state = 0;
+    }
+}
+
+
 void print_spikearray(SpikeArray *spikearray)
 {
   int i;
 
   for(i=0; i<spikearray->n; i++)
     {
-      printf("%8d, %8d\n", spikearray->spikes[i].step, spikearray->spikes[i].cellid);
+      printf("%8d, %8d, %8d\n", spikearray->spikes[i].step, spikearray->spikes[i].cellid, spikearray->spikes[i].state);
     }
 }

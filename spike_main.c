@@ -36,6 +36,7 @@ void init_spikegenerator_example(SpikeArray *spikegenerator, const int stop_step
       for (j=0; j<n_cell_local; j++){
 	spikegenerator->spikes[spikegenerator->n].step = i;
 	spikegenerator->spikes[spikegenerator->n].cellid = j+cellid_offset;
+	spikegenerator->spikes[spikegenerator->n].state = 0;
 	spikegenerator->n++;
       }
     }
@@ -53,8 +54,16 @@ void init_spikerecorder(SpikeArray *spikerecorder)
 
 void init_spikebuffer(SpikeArray *spikebuffer, int n_connection)
 {
+  int i;
   alloc_spikearray(spikebuffer, n_connection);
   spikebuffer->n = n_connection;
+
+  for (i=0; i<spikebuffer->n; i++)
+    {
+      spikebuffer->spikes[i].step = 0;
+      spikebuffer->spikes[i].cellid = i;
+      spikebuffer->spikes[i].state = 0;
+    }
 }
 
 void init_connection(ConnectionArray *connarray, int n_cell)
@@ -110,7 +119,7 @@ void send_spike_main()
   //char out_filename_template[] = "%s/";
   int mpi_id, mpi_size;
   int n_cell_local = 4;
-  int stop_step = 1000;
+  int stop_step = 5;
 
   SpikeArray _spikegenerator, _spikerecorder, _spikebuffer;
   SpikeArray *spikegenerator = &_spikegenerator;
@@ -145,10 +154,14 @@ void send_spike_main()
   int i_spikegenerator=0;
   for(step=0; step < stop_step; step++)
     {
+      printf("step=%d\n", step);
+      unset_spikearray_state(spikebuffer);
       while(spikegenerator->spikes[i_spikegenerator].step == step)
 	{
+	  spikebuffer->spikes[ (spikegenerator->spikes[i_spikegenerator].cellid) ].state = 1;
 	  i_spikegenerator++;
 	}
+      print_spikearray(spikebuffer);
 
     }
   printf (" [Finish]\n");
