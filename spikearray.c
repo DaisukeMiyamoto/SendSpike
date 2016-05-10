@@ -6,11 +6,14 @@
 int alloc_spikearray(SpikeArray *spikearray, int size)
 {
   spikearray->spikes = (Spike *)malloc(size * sizeof(Spike));
-  if (spikearray->spikes == NULL){
-    printf ("Memory Allocation Error.\n");
-    exit(-1);
-  }
+  if (spikearray->spikes == NULL)
+    {
+      printf ("Memory Allocation Error.\n");
+      exit(-1);
+    }
   spikearray->max = size;
+
+  return(0);
 }
 
 

@@ -18,6 +18,11 @@ typedef struct _connection{
   int postcellid;
 } Connection;
 
+typedef struct _connectionarray{
+  int n;
+  Connection *conn;
+} ConnectionArray;
+
 
 void init_spikegenerator_example(SpikeArray *spikegenerator, const int stop_step, const int n_cell_local, const int cellid_offset)
 {
@@ -45,6 +50,41 @@ void init_spikerecorder(SpikeArray *spikerecorder)
   spikerecorder->n = 0;
 }
 
+
+void init_spikebuffer(SpikeArray *spikebuffer, int n_connection)
+{
+  alloc_spikearray(spikebuffer, n_connection);
+  spikebuffer->n = n_connection;
+}
+
+void init_connection(ConnectionArray *connarray, int n_cell)
+{
+  int i;
+
+  connarray->conn = (Connection *)malloc(n_cell * sizeof(Connection));
+  if(connarray->conn == NULL)
+    {
+      printf ("Memory Allocation Error.\n");
+      exit(-1);
+    }
+  connarray->n = n_cell;
+
+  for (i=0; i<n_cell; i++)
+    {
+      connarray->conn[i].precellid = i;
+      connarray->conn[i].postcellid = (i+1)%n_cell;
+    }
+}
+
+void print_connection(ConnectionArray *connarray)
+{
+  int i;
+  for (i=0; i<connarray->n; i++)
+    {
+      printf ("%d -> %d\n", connarray->conn[i].precellid, connarray->conn[i].postcellid);
+    }
+}
+
 void check_result(SpikeArray *spikegenerator, SpikeArray *spikerecorder)
 {
   int sum_send_spikes;
@@ -64,19 +104,21 @@ void check_result(SpikeArray *spikegenerator, SpikeArray *spikerecorder)
 }
 
 
-int send_spike_main()
+void send_spike_main()
 {
-
-  char in_filename_template[] = "%s/";
-  char out_filename_template[] = "%s/";
+  //char in_filename_template[] = "%s/";
+  //char out_filename_template[] = "%s/";
   int mpi_id, mpi_size;
   int n_cell_local = 4;
   int stop_step = 1000;
 
-
-  SpikeArray _spikegenerator, _spikerecorder;
+  SpikeArray _spikegenerator, _spikerecorder, _spikebuffer;
   SpikeArray *spikegenerator = &_spikegenerator;
   SpikeArray *spikerecorder = &_spikerecorder;
+  SpikeArray *spikebuffer = &_spikebuffer;
+
+  ConnectionArray _connarray;
+  ConnectionArray *connarray = &_connarray;
 
 
   MPI_Comm_rank(MPI_COMM_WORLD, &mpi_id);
@@ -93,15 +135,23 @@ int send_spike_main()
   init_spikegenerator_example(spikegenerator, stop_step, n_cell_local, n_cell_local*mpi_id);
   init_spikerecorder(spikerecorder);
 
+  init_connection(connarray, n_cell_local * mpi_size);
+  print_connection(connarray);
+  init_spikebuffer(spikebuffer, connarray->n);
+
   // main loop
   printf (" [Start]\n");
   int step;
+  int i_spikegenerator=0;
   for(step=0; step < stop_step; step++)
     {
+      while(spikegenerator->spikes[i_spikegenerator].step == step)
+	{
+	  i_spikegenerator++;
+	}
 
     }
   printf (" [Finish]\n");
-
 
   //print_spikearray(spikegenerator);
   //print_spikearray(spikerecorder);
@@ -110,6 +160,7 @@ int send_spike_main()
   
   free_spikearray(spikegenerator);
   free_spikearray(spikerecorder);
+  free_spikearray(spikebuffer);
 
   return;
 }
